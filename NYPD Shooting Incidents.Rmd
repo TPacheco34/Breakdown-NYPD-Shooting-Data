@@ -1,0 +1,103 @@
+---
+title: "NYPD Shooting Data"
+author: "T. Pacheco"
+date: '2022-07-25'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+Load Data
+```{r NYPD Shooting Incidents}
+
+url_in <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+
+library(tidyverse)
+
+NYPD_shooting <- read_csv(url_in)
+
+
+```
+
+
+
+
+
+```{r Transformation}
+
+NYPD_shooting <- subset(NYPD_shooting, select = -c(LOCATION_DESC, PERP_AGE_GROUP:PERP_RACE))
+
+library(dplyr)
+library(lubridate)
+
+NYPD_shooting <- mutate(NYPD_shooting, OCCUR_DATE = mdy(OCCUR_DATE))
+
+grouped_boro <- NYPD_shooting %>% 
+  select(OCCUR_DATE, BORO) %>% 
+  arrange(BORO)
+```
+
+
+Amount of shootings by Borough and shooting victims by gender
+
+```{r Visualization}  
+
+library(ggplot2)
+
+ggplot(NYPD_shooting, aes(x = BORO)) + geom_bar() + xlab("Boroughs") + ylab("Shooting Incidents")
+
+ggplot(NYPD_shooting, aes(x = "", y = VIC_SEX, fill = VIC_SEX)) + geom_col() + ylab("y") + coord_polar(theta = "y") + guides(fill = guide_legend(title = "Victim Sex")) + ggtitle("Incidents by Victim Sex") + scale_fill_discrete(labels = c("Female", "Male","Unkown"))
+
+
+```
+
+
+Amount of shootings per day reported in New York
+
+The amount and percentage of shootings by borough
+
+```{r Analyzation}
+library(scales)
+
+shootings_per_day = (length(NYPD_shooting$INCIDENT_KEY))/(length(unique(NYPD_shooting$OCCUR_DATE)))
+
+cat("Shootings per day =",shootings_per_day)
+
+total_shootings = length(NYPD_shooting$BORO)
+
+incidents_by_boro <- grouped_boro %>%
+  count(BORO) %>%
+  rename(Shootings = n)
+
+shooting_rate = (incidents_by_boro$Shootings/total_shootings)
+
+percent_boro <- data.frame(incidents_by_boro, percent(shooting_rate))
+
+percent_boro
+
+incident_time = NYPD_shooting %>% 
+  group_by(OCCUR_TIME) %>% 
+  count()
+
+ggplot(incident_time, aes(x = OCCUR_TIME, y = n)) + geom_line(color = "blue") + labs(title = "Time of Shootings", x = "Time", y = "Shootings")
+
+
+```
+
+As shown in the "Time of Shootings" Plot, the bulk of the shootings throughout New York take place when the sun is down. 
+
+Based on the percentage of shootings the safest borough by gun violence is Staten Island.
+
+Possible bias may come from the reporting of the shootings, the human element in data entry. 
+
+
+
+
+
