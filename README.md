@@ -1,1 +1,1 @@
-# data_science_as_a_field
+Project on the dissection of shooting incidents, as reported by the NYPD. 
